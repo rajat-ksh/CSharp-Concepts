@@ -6,11 +6,15 @@
  * Fourth Task – calculates the average value. All this tasks should print the values to console.
  */
 using System;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace MultiThreading.Task2.Chaining
 {
     class Program
     {
+        static Random random = new Random();
+
         static void Main(string[] args)
         {
             Console.WriteLine(".Net Mentoring Program. MultiThreading V1 ");
@@ -22,8 +26,61 @@ namespace MultiThreading.Task2.Chaining
             Console.WriteLine();
 
             // feel free to add your code
-
+            Task<int[]> GeneratingRandomArray = Task.Factory.StartNew(CreateRandomArray);
+            Task<int[]> MultiplingRandomArray = GeneratingRandomArray.ContinueWith(MultipleRandomNumber);
+            Task<int[]> SortingRandomArray = MultiplingRandomArray.ContinueWith(SortRandomArray);
+            Task<double> AverageRandomArray = SortingRandomArray.ContinueWith(CalculateAverage);
+            Task.WaitAll(GeneratingRandomArray, MultiplingRandomArray, SortingRandomArray, AverageRandomArray);
+            Console.WriteLine("\nAverage: " + AverageRandomArray.Result);
             Console.ReadLine();
+        }
+
+        private static double CalculateAverage(Task<int[]> task)
+        {
+            int[] numbers = task.Result;
+            return numbers.Average();
+        }
+
+        private static int[] SortRandomArray(Task<int[]> task)
+        {
+            int[] numbers = task.Result;
+            Array.Sort(numbers);
+            Console.WriteLine("\nArray after sorting:- ");
+            PrintArray(numbers);
+            return numbers;
+        }
+
+        private static int[] MultipleRandomNumber(Task<int[]> task)
+        {
+            int[] numbers = task.Result;
+            int multipler = random.Next(1, 5);
+            Console.WriteLine("\nMultiplier:- {0}", multipler);
+            for (int i = 0; i < 10; i++)
+            {
+                numbers[i] *= multipler;
+            }
+            PrintArray(numbers);
+            return numbers;
+        }
+
+        private static int[] CreateRandomArray()
+        {
+            int[] randomNumbers = new int[10];
+            for (int i = 0; i < 10; i++)
+            {
+                randomNumbers[i] = random.Next(1, 25);
+            }
+            Console.WriteLine("Array Created:- ");
+            PrintArray(randomNumbers);
+            return randomNumbers;
+        }
+
+        private static void PrintArray(int[] array)
+        {
+            for (int i = 0; i < array.Length; i++)
+            {
+                Console.Write(array[i] + " ");
+            }
         }
     }
 }
