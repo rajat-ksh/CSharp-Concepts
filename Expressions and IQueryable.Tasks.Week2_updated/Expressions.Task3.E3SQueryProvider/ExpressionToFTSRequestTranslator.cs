@@ -33,25 +33,73 @@ namespace Expressions.Task3.E3SQueryProvider
 
                 return node;
             }
+            switch (node.Method.Name)
+            {
+                case "StartsWith":
+                    VisitCommonMethodFormatter(node);
+                    return node;
+                case "EndsWith":
+                    VisitCommonMethodFormatter(node);
+                    return node;
+                case "Contains":
+                    VisitCommonMethodFormatter(node);
+                    return node;
+                case "Equals":
+                    VisitCommonMethodFormatter(node);
+                    return node;
+            }
             return base.VisitMethodCall(node);
         }
 
+        protected Expression VisitCommonMethodFormatter(MethodCallExpression node)
+        {
+            var mainArg = node.Arguments[0];
+            var lambda = Expression.Lambda<Func<string>>(mainArg);
+            var arg = lambda.Compile()();
+            var member = node.Object as MemberExpression;
+            if (node.Method.Name == "EndsWith")
+            {
+                _resultStringBuilder.AppendFormat($"{member.Member.Name}:(*{arg})");
+            }
+            else if (node.Method.Name == "Contains")
+            {
+                _resultStringBuilder.AppendFormat("{0}:(*{1}*)", member.Member.Name, arg);
+            }
+            else if (node.Method.Name == "StartsWith")
+            {
+                _resultStringBuilder.AppendFormat("{0}:({1}*)", member.Member.Name, arg);
+            }
+            else if (node.Method.Name == "Equals")
+            {
+                _resultStringBuilder.AppendFormat("{0}:({1})", member.Member.Name, arg);
+            }
+            else
+            {
+                throw new NotSupportedException($"Method op not supported '{node.Method.Name}' is not supported");
+            }
+            return node;
+        }
         protected override Expression VisitBinary(BinaryExpression node)
         {
             switch (node.NodeType)
             {
                 case ExpressionType.Equal:
-                    if (node.Left.NodeType != ExpressionType.MemberAccess)
-                        throw new NotSupportedException($"Left operand should be property or field: {node.NodeType}");
-
-                    if (node.Right.NodeType != ExpressionType.Constant)
-                        throw new NotSupportedException($"Right operand should be constant: {node.NodeType}");
-
-                    Visit(node.Left);
-                    _resultStringBuilder.Append("(");
-                    Visit(node.Right);
-                    _resultStringBuilder.Append(")");
-                    break;
+                    if (node.Left.NodeType != ExpressionType.MemberAccess && node.Right.NodeType != ExpressionType.Constant)
+                    {
+                        Visit(node.Right);
+                        _resultStringBuilder.Append("(");
+                        Visit(node.Left);
+                        _resultStringBuilder.Append(")");
+                        break;
+                    }
+                    else
+                    {
+                        Visit(node.Left);
+                        _resultStringBuilder.Append("(");
+                        Visit(node.Right);
+                        _resultStringBuilder.Append(")");
+                        break;
+                    }
 
                 default:
                     throw new NotSupportedException($"Operation '{node.NodeType}' is not supported");
