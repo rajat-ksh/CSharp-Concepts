@@ -25,7 +25,7 @@ namespace CatalogService.Controllers
             List<CategoryResponse> responses = new List<CategoryResponse>();
             foreach (var category in categories)
             {
-                responses.Add(new CategoryResponse { Id = category.Id, Name = category.Name });
+                responses.Add(CreateCategoryResponse(category));
             }
 
             return Ok(responses);
@@ -38,7 +38,7 @@ namespace CatalogService.Controllers
             var category = await dbContext.Category.FindAsync(id);
             if (category != null)
             {
-                return Ok(category);
+                return Ok(CreateCategoryResponse(category));
             }
             return NotFound();
         }
@@ -52,9 +52,16 @@ namespace CatalogService.Controllers
             };
             try
             {
+                var existingCategory = dbContext.Category.FirstOrDefault(x => x.Name == category.Name);
+
+                if (existingCategory != null)
+                {
+                    return Ok(value: $"Category {category.Name} already exist with Id:- {existingCategory.Id}");
+                }
+
                 await dbContext.Category.AddAsync(newCategory);
                 await dbContext.SaveChangesAsync();
-                return Ok(newCategory);
+                return Ok(CreateCategoryResponse(newCategory));
             }
             catch (Exception ex)
             {
@@ -72,7 +79,7 @@ namespace CatalogService.Controllers
                 category.Name = updateCategory.Name;
 
                 await dbContext.SaveChangesAsync();
-                return Ok(category);
+                return Ok(CreateCategoryResponse(category));
             }
             return NotFound();
         }
@@ -88,9 +95,14 @@ namespace CatalogService.Controllers
                 dbContext.Remove(category);
                 await dbContext.SaveChangesAsync();
 
-                return Ok(category);
+                return Ok(CreateCategoryResponse(category));
             }
             return NotFound();
+        }
+
+        private CategoryResponse CreateCategoryResponse(Category item)
+        {
+            return new CategoryResponse { Id = item.Id, Name = item.Name };
         }
     }
 }
