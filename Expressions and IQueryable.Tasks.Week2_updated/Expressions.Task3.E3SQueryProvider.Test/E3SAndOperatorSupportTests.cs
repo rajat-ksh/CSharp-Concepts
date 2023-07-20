@@ -11,6 +11,7 @@ using System;
 using System.Linq;
 using System.Linq.Expressions;
 using Expressions.Task3.E3SQueryProvider.Models.Entities;
+using Expressions.Task3.E3SQueryProvider.Models.Request;
 using Xunit;
 
 namespace Expressions.Task3.E3SQueryProvider.Test
@@ -22,20 +23,14 @@ namespace Expressions.Task3.E3SQueryProvider.Test
         [Fact]
         public void TestAndQueryable()
         {
+            var expectedExpression = "Workstation:(EPRUIZHW006) , Manager:(John*)";
             var translator = new ExpressionToFtsRequestTranslator();
+            var ftsRequestGenreator = new FtsRequestGenerator("statements");
             Expression<Func<IQueryable<EmployeeEntity>, IQueryable<EmployeeEntity>>> expression
                 = query => query.Where(e => e.Workstation == "EPRUIZHW006" && e.Manager.StartsWith("John"));
-            /*
-             * The expression above should be converted to the following FTSQueryRequest and then serialized inside FTSRequestGenerator:
-             * "statements": [
-                { "query":"Workstation:(EPRUIZHW006)"},
-                { "query":"Manager:(John*)"}
-                // Operator between queries is AND, in other words result set will fit to both statements above
-              ],
-             */
-
-            // todo: create asserts for this test by yourself, because they will depend on your final implementation
-            throw new NotImplementedException("Please implement this test and the appropriate functionality");
+            var translatedExpression = translator.Translate(expression);
+            
+            Assert.Equal(expectedExpression, translatedExpression);
         }
 
         #endregion
